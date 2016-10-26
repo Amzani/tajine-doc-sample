@@ -1,0 +1,265 @@
+Search API
+==========
+Private API based on [Algolia API](https://www.algolia.com/) exposing search functionalities for the Dailymotion clients (The Monolith, Mira, our mobile applications, ...).
+
+The API exposes search endpoint for each indexes (users, videos, lives and playlists), as well as an overview endpoint, used by the instant result functionnality of the website.Please note that the endpoints are under the following root: https://search.api.dailymotion.com/v1/
+```
+Example: https://search.api.dailymotion.com/v1/videos/?q=bahamax
+```
+
+## Objects
+The Search module defines 4 object types:
+* `Playlist` : Object returned when searching on the playlists index.
+* `User` : Object returned when searching on the users index.
+* `Video` : Object returned when searching on the videos index.
+* `Live` : Object returned when searching on the lives index.
+
+The schemas of thoses objects are described bellow.
+
+
+## Paging
+Each endpoints of the Search API return a single page of items, along with a "paging" object, used to iterate of the different result pages.
+
+This object contains the information for fetching the previous page and next page, as well as the total count. Each field is optional and might not be present.
+
+#### Schema example
+```
+"paging": {
+  "next": "https://search.api.dailymotion.com/playlists/?q=foobar&family_filter=false&limit=20&page=2",
+  "total_count": 420021,
+  "pages": {
+    "before": 1,
+    "after": 2
+  }
+}
+```
+
+## Errors
+When an error occurs on the xBased API, we provide a common interface between all our endpoints to be consistent and simplify client experience.
+
+### Default json response format
+The response payload for each errors will be returned in JSON with the suitable content type header -> 'application/json'
+
+### Root object
+```
+{
+  "http_status_code" : integer,
+  "errors": [Error]
+}
+```
+* `http_status_code` contains the HTTP response status code (e.g. 400 for bad request, 500 for internal server error)
+* `errors` array of errors
+
+### Error object
+```
+{
+  "code": string,
+  "message": string,
+  "developer_message": optional|string,
+  "more_info": optional|string,
+  "path": optional|string,
+  "metadata": optional {
+    "key": "value"
+    }
+  }
+```
+* `code` message identifier listed into a global registry (seperated by a dot with prefix used as namespace).
+* `message` localized message which could be shown directly to the client.
+* `developer_message` (optional) more detailed message containing information useful for the developer.
+* `more_info` (optional) link to a specific page of the documentation for more precise information about the error and the appropriate error handling workflow to implement.
+* `path` (optional) Hierarchical path of the property related to the error message (example: user.birthdate)
+* `metadata` (optional) Additional set of key/values metadata values.
+
+### Example : User sign-up
+In case of a user registration workflow, we decide that a user have to be older than 18 to have the ability to register. So, if an invalid birthdate is provided, the system returns an error. Below is an example of a request with an invalid birthdate.
+
+#### Request payload
+```
+{
+  "username": "jason",
+  "birthdate": "12/28/2006",
+  "password": "1234"
+}
+```
+
+#### Response payload
+```
+{
+"http_status_code": 400,
+"errors":
+  [
+    {
+      "code": "user.not_adult",
+      "message": "You have to be older than 18.",
+      "developer_message": "The user must be older than 18, i.e: current_year - 18 > birthdate",
+      "path": "birthdate",
+      "metadata": optional
+        {
+          "min-birthdate": "25/04/1998"
+        }
+    }
+  ]
+}
+```
+
+
+**Version:** 1.0.0
+
+**Terms of service:**  
+http://tbd
+
+**Contact information:**  
+RC Team  
+squad-relevant-content@dailymotion.com  
+http://developers.dailymotion.com  
+
+### /overview/
+---
+##### ***GET***
+**Description:** Returns a JSON object containing the first page of search results for the given "q" parameter.
+The object has 4 keys: "playlist", "user", "video" and "live". One for each search index.
+
+##### Example:
+```
+https://search.api.dailymotion.com/v1/overview/?q=bahamax
+```
+
+Each of these keys is an object containing the following keys:
+- `data`: an array of playlist, user or video objects depending on the index. See data objects for a description of these objects.
+- `paging`: the paging information for the result set. See paging section for a description of this object.
+
+
+**Parameters**
+
+| Name | Located in | Description | Required | Type |
+| ---- | ---------- | ----------- | -------- | ---- |
+| q | query | The query | Yes | string |
+| family_filter | query | Should the query return explicit content | No | boolean |
+| verified | query | Should the query return only content from verified partners | No | boolean |
+| limit | query | Maximum number of elements to return for each index | No | integer |
+
+**Responses**
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Overview object |
+
+### /videos/
+---
+##### ***GET***
+**Description:** Returns a JSON object containing a page of search results on the "videos" index for the given "q" parameter.
+
+##### Example:
+```
+https://search.api.dailymotion.com/v1/videos/?q=bahamax
+```
+
+The object has 2 keys:
+* `data`: an array of video objects
+* `paging`: an object containing the paging information
+
+
+**Parameters**
+
+| Name | Located in | Description | Required | Type |
+| ---- | ---------- | ----------- | -------- | ---- |
+| q | query | The query | Yes | string |
+| family_filter | query | Should the query return explicit content | No | boolean |
+| verified | query | Should the query return only content from verified partners | No | boolean |
+| limit | query | Maximum number of elements to return for each index | No | integer |
+
+**Responses**
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Videos objects |
+
+### /users/
+---
+##### ***GET***
+**Description:** Returns a JSON object containing a page of search results on the "users" index for the given "q" parameter.
+
+##### Example:
+```
+https://search.api.dailymotion.com/v1/users/?q=bahamax
+```
+
+The object has 2 keys:
+* `data`: an array of user objects
+* `paging`: an object containing the paging information
+
+
+**Parameters**
+
+| Name | Located in | Description | Required | Type |
+| ---- | ---------- | ----------- | -------- | ---- |
+| q | query | The query | Yes | string |
+| family_filter | query | Should the query return explicit content | No | boolean |
+| verified | query | Should the query return only verified partners | No | boolean |
+| limit | query | Maximum number of elements to return for each index | No | integer |
+
+**Responses**
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Users objects |
+
+### /playlists/
+---
+##### ***GET***
+**Description:** Returns a JSON object containing a page of search results on the "playlists" index for the given "q" parameter.
+
+##### Example:
+```
+https://search.api.dailymotion.com/v1/paylists/?q=bahamax
+```
+
+The object has 2 keys:
+* `data`: an array of playlist objects
+* `paging`: an object containing the paging information
+
+
+**Parameters**
+
+| Name | Located in | Description | Required | Type |
+| ---- | ---------- | ----------- | -------- | ---- |
+| q | query | The query | Yes | string |
+| family_filter | query | Should the query return explicit content | No | boolean |
+| verified | query | Should the query return only verified partners content | No | boolean |
+| limit | query | Maximum number of elements to return for each index | No | integer |
+
+**Responses**
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Playlist objects |
+
+### /lives/
+---
+##### ***GET***
+**Description:** Returns a JSON object containing a page of search results on the "lives" index for the given "q" parameter.
+
+##### Example:
+```
+https://search.api.dailymotion.com/v1/lives/?q=bahamax
+```
+
+The object has 2 keys:
+* `data`: an array of playlist objects
+* `paging`: an object containing the paging information
+
+
+**Parameters**
+
+| Name | Located in | Description | Required | Type |
+| ---- | ---------- | ----------- | -------- | ---- |
+| q | query | The query | Yes | string |
+| family_filter | query | Should the query return explicit content | No | boolean |
+| verified | query | Should the query return only verified partners content | No | boolean |
+| limit | query | Maximum number of elements to return for each index | No | integer |
+
+**Responses**
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Lives objects |

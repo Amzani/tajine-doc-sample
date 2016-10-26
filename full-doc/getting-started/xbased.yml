@@ -1,0 +1,231 @@
+# Example YAML to get you started quickly.
+# Be aware that YAML has indentation based scoping.
+# Code completion support is available so start typing for available options.
+swagger: '2.0'
+host: "xbased.api.dailymotion.com"
+# This is your document metadata
+info:
+  version: "v1"
+  title: xBased API
+  description: The xBased API is an internal API used to scale some technical endpoints.
+
+# Describe your paths here
+paths:
+  # This is a path endpoint. Change it.
+  /about:
+    # This is a HTTP operation
+    get:
+      tags:
+      - about
+      # Describe this verb here. Note: you can use markdown
+      description: |
+        The 'about' endoint is basically the endpoint that will always work. If it doesn't,
+        then it means the whole xBased API is broken.
+        It defines the /about endpoint, returning a basic, simple object for debug purposes.
+      # This is array of GET operation parameters:
+      # Expected responses for this operation:
+      responses:
+        # Response code
+        200:
+          description: Successful response
+          # A schema describing your response object.
+          # Use JSON Schema format
+          schema:
+            title: AboutObject
+            type: object
+            required:
+              - version
+              - environment
+              - region
+              - authors
+              - contact
+            properties:
+              version:
+                type: string
+              environment:
+                type: string
+              region:
+                type: string
+              authors:
+                type: string
+              contact:
+                type: string
+  /v1/locale:
+    # This is a HTTP operation
+    get:
+      tags:
+      - locale
+      # Describe this verb here. Note: you can use markdown
+      description: |
+        Private endpoint resolving localisation information based on the given request parameters. The endpoint will return the country based on GeoIP resolution, the language based on on the Accept-Languages header as well as the associated LocaleV2 string.
+      # This is array of GET operation parameters:
+      # Expected responses for this operation:
+      responses:
+        # Response code
+        200:
+          description: Successful response
+          # A schema describing your response object.
+          # Use JSON Schema format
+          schema:
+            title: LocalObject
+            type: object
+            required:
+              - country
+              - language
+              - legacy_locale
+            properties:
+              country:
+                type: string
+                description: the ISO-3166-1 alpha-2 country code inferred by the xBased API using GeoIP mapping. The xBased will first consider the /Forwarded/ header, then the /X-Forwarded-For/, then finally the IP of the remote client. Set to /null/ if the country code could not be determined.
+              language:
+                type: string
+                description: the ISO-639-1 language code inferred by the xBased API by parsing the /Accept-Language/ header.
+              legacy_locale:
+                type: string
+                description: the LocaleV2 string understood by the DM Monolith ® (to be passed, for example, as the /localization/ parameter to the graph API)
+
+
+  /v1/rules/:
+    # This is a HTTP operation
+    get:
+      tags:
+      - rules
+      # Describe this verb here. Note: you can use markdown
+      description:
+        Returns a set of rules depending on the given namespace (defaults to all rules).
+        The returned data is a JSON object with the "data" key set to a mapping from rule ID to rule object.
+      consumes:
+      - application/x-www-form-urlencoded
+      produces:
+      - application/json
+      # This is array of GET operation parameters:
+      parameters:
+      - name: user_id
+        in: formData
+        description: The xID of the user to consider when matching the rules users
+        required: false
+        type: string
+        pattern: '^x(.*)+'
+      - name: ts
+        in: formData
+        description: Integer between 0 and 1,000,000, the traffic segment to consider when matching the rules traffic ranges
+        required: false
+        type: integer
+        format: int32
+        minimum: 0
+        maximum: 1000000
+      - name: country_code
+        in: formData
+        description: the ISO-3166-1 alpha-2 country code  to consider when matching the rules countries. If not set, the country code will be inferred from the GeoIP match of the client IP (or Forwarded/X-Forwarded-For headers) headers.
+        required: false
+        type: string
+        pattern: '^[A-Z]{2}$'
+      - name: ns
+        in: formData
+        description: limit the result set to rules part of a namespace
+        required: false
+        type: string
+      responses:
+        # Response code
+        200:
+          description: Successful response
+          # A schema describing your response object.
+          # Use JSON Schema format
+          schema:
+            title: RulesArray
+            type: array
+            items:
+              $ref: '#/definitions/RuleModel'
+
+  /v1/rules/{id}:
+    # This is a HTTP operation
+    get:
+      tags:
+      - rules
+      # Describe this verb here. Note: you can use markdown
+      description:
+        Returns a JSON object representation of the rule with the given rule_id.
+      consumes:
+      - application/x-www-form-urlencoded
+      produces:
+      - application/json
+      # This is array of GET operation parameters:
+      parameters:
+      - name: id
+        in: path
+        description: A rule ID (example mira.ads.provider.mopub)
+        required: true
+        type: string
+      - name: user_id
+        in: formData
+        description: The xID of the user to consider when matching the rules users
+        required: false
+        type: string
+        pattern: '^x(.*)+'
+      - name: ts
+        in: formData
+        description: Integer between 0 and 1,000,000, the traffic segment to consider when matching the rules traffic ranges
+        required: false
+        type: integer
+        format: int32
+        minimum: 0
+        maximum: 1000000
+      - name: country_code
+        in: formData
+        description: the ISO-3166-1 alpha-2 country code  to consider when matching the rules countries. If not set, the country code will be inferred from the GeoIP match of the client IP (or Forwarded/X-Forwarded-For headers) headers.
+        required: false
+        type: string
+        pattern: '^[A-Z]{2}$'
+      - name: ns
+        in: formData
+        description: limit the result set to rules part of a namespace
+        required: false
+        type: string
+      responses:
+        # Response code
+        200:
+          description: Successful response
+          # A schema describing your response object.
+          # Use JSON Schema format
+          schema:
+            $ref: '#/definitions/RuleModel'
+
+definitions:
+  RuleModel:
+    type: object
+    required:
+    - id
+    - active
+    - countries
+    - trafic_range
+    - users
+    properties:
+      id:
+        type: string
+      active:
+        type: boolean
+      countries:
+        type: array
+        items:
+          type: string
+      trafic_range:
+        type: object
+        required:
+          - end
+          - start
+        properties:
+          end:
+            type: integer
+            minimum: 0
+            maximum: 1000000
+          start:
+            type: integer
+            minimum: 0
+            maximum: 1000000
+      users:
+        type: array
+        items:
+          type: string
+
+
+     
