@@ -1,0 +1,12 @@
+{
+  "title" : "Tajine",
+  "slug" : "tajine",
+  "product" : "apis",
+  "pages" : [
+    {
+      "path" : "/",
+      "source" : "./README.md",
+      "title" : "Introduction"
+    }
+  ]
+}
